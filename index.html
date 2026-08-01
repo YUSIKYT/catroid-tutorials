@@ -64,7 +64,7 @@
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s cubic-bezier(04, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
         }
 
         .video-card:hover {
@@ -82,10 +82,12 @@
             overflow: hidden;
         }
 
-        .custom-video-wrapper video {
+        .custom-video-wrapper video,
+        .custom-video-wrapper iframe {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border: none;
             display: block;
         }
 
@@ -244,87 +246,6 @@
                     const wrapper = document.createElement('div');
                     wrapper.className = 'custom-video-wrapper';
 
-                    const video = document.createElement('video');
-                    video.src = videoData.url;
-                    video.preload = "metadata";
-                    video.playsInline = true;
-
-                    // Панель управления
-                    const controls = document.createElement('div');
-                    controls.className = 'video-controls';
-
-                    const playBtn = document.createElement('button');
-                    playBtn.className = 'ctrl-btn play-btn';
-                    playBtn.innerHTML = '▶';
-
-                    const progressContainer = document.createElement('div');
-                    progressContainer.className = 'progress-bar-container';
-
-                    const progressFilled = document.createElement('div');
-                    progressFilled.className = 'progress-filled';
-                    progressContainer.appendChild(progressFilled);
-
-                    const timeDisplay = document.createElement('div');
-                    timeDisplay.className = 'video-time';
-                    timeDisplay.textContent = '0:00 / 0:00';
-
-                    const fullscreenBtn = document.createElement('button');
-                    fullscreenBtn.className = 'ctrl-btn fullscreen-btn';
-                    fullscreenBtn.innerHTML = '⛶';
-
-                    controls.appendChild(playBtn);
-                    controls.appendChild(progressContainer);
-                    controls.appendChild(timeDisplay);
-                    controls.appendChild(fullscreenBtn);
-
-                    wrapper.appendChild(video);
-                    wrapper.appendChild(controls);
-
-                    // Логика плеера
-                    playBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (video.paused) {
-                            video.play();
-                            playBtn.innerHTML = '⏸';
-                        } else {
-                            video.pause();
-                            playBtn.innerHTML = '▶';
-                        }
-                    });
-
-                    video.addEventListener('click', () => {
-                        playBtn.click();
-                    });
-
-                    video.addEventListener('timeupdate', () => {
-                        const percent = (video.currentTime / video.duration) * 100;
-                        progressFilled.style.width = `${percent}%`;
-                        timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
-                    });
-
-                    progressContainer.addEventListener('click', (e) => {
-                        const rect = progressContainer.getBoundingClientRect();
-                        const pos = (e.clientX - rect.left) / rect.width;
-                        video.currentTime = pos * video.duration;
-                    });
-
-                    video.addEventListener('ended', () => {
-                        playBtn.innerHTML = '▶';
-                    });
-
-                    // Полноэкранный режим
-                    fullscreenBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (wrapper.requestFullscreen) {
-                            wrapper.requestFullscreen();
-                        } else if (wrapper.webkitRequestFullscreen) {
-                            wrapper.webkitRequestFullscreen();
-                        } else if (video.webkitEnterFullscreen) {
-                            video.webkitEnterFullscreen(); // Для iOS
-                        }
-                    });
-
-                    // Информация под видео (без папки)
                     const videoInfo = document.createElement('div');
                     videoInfo.className = 'video-info';
 
@@ -338,6 +259,113 @@
 
                     videoInfo.appendChild(titleDiv);
                     videoInfo.appendChild(descDiv);
+
+                    // Проверяем, YouTube ли это ссылка или локальный файл
+                    const isYouTube = videoData.url.includes('youtube.com') || videoData.url.includes('youtu.be');
+
+                    if (isYouTube) {
+                        // Конвертируем обычную ссылку YouTube в embed формат
+                        let embedUrl = videoData.url;
+                        if (videoData.url.includes('watch?v=')) {
+                            embedUrl = videoData.url.replace('watch?v=', 'embed/');
+                        } else if (videoData.url.includes('youtu.be/')) {
+                            embedUrl = videoData.url.replace('youtu.be/', 'www.youtube.com/embed/');
+                        }
+
+                        const iframe = document.createElement('iframe');
+                        iframe.src = embedUrl;
+                        iframe.title = videoData.title;
+                        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                        iframe.allowFullscreen = true;
+
+                        wrapper.appendChild(iframe);
+                    } else {
+                        // Локальное видео с кастомным плеером
+                        const video = document.createElement('video');
+                        video.src = videoData.url;
+                        video.preload = "metadata";
+                        video.playsInline = true;
+
+                        const controls = document.createElement('div');
+                        controls.className = 'video-controls';
+
+                        const playBtn = document.createElement('button');
+                        playBtn.className = 'ctrl-btn play-btn';
+                        playBtn.innerHTML = '▶';
+
+                        const progressContainer = document.createElement('div');
+                        progressContainer.className = 'progress-bar-container';
+
+                        const progressFilled = document.createElement('div');
+                        progressFilled.className = 'progress-filled';
+                        progressContainer.appendChild(progressFilled);
+
+                        const timeDisplay = document.createElement('div');
+                        timeDisplay.className = 'video-time';
+                        timeDisplay.textContent = '0:00 / 0:00';
+
+                        const fullscreenBtn = document.createElement('button');
+                        fullscreenBtn.className = 'ctrl-btn fullscreen-btn';
+                        fullscreenBtn.innerHTML = '⛶';
+
+                        controls.appendChild(playBtn);
+                        controls.appendChild(progressContainer);
+                        controls.appendChild(timeDisplay);
+                        controls.appendChild(fullscreenBtn);
+
+                        wrapper.appendChild(video);
+                        wrapper.appendChild(controls);
+
+                        // События плеера
+                        playBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (video.paused) {
+                                video.play();
+                                playBtn.innerHTML = '⏸';
+                            } else {
+                                video.pause();
+                                playBtn.innerHTML = '▶';
+                            }
+                        });
+
+                        video.addEventListener('click', () => {
+                            playBtn.click();
+                        });
+
+                        video.addEventListener('timeupdate', () => {
+                            const percent = (video.currentTime / video.duration) * 100;
+                            progressFilled.style.width = `${percent}%`;
+                            timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
+                        });
+
+                        progressContainer.addEventListener('click', (e) => {
+                            const rect = progressContainer.getBoundingClientRect();
+                            const pos = (e.clientX - rect.left) / rect.width;
+                            video.currentTime = pos * video.duration;
+                        });
+
+                        video.addEventListener('ended', () => {
+                            playBtn.innerHTML = '▶';
+                        });
+
+                        // Исправленный полноэкранный режим с возможностью выхода
+                        fullscreenBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (!document.fullscreenElement) {
+                                if (wrapper.requestFullscreen) {
+                                    wrapper.requestFullscreen();
+                                } else if (wrapper.webkitRequestFullscreen) {
+                                    wrapper.webkitRequestFullscreen();
+                                }
+                            } else {
+                                if (document.exitFullscreen) {
+                                    document.exitFullscreen();
+                                } else if (document.webkitExitFullscreen) {
+                                    document.webkitExitFullscreen();
+                                }
+                            }
+                        });
+                    }
 
                     card.appendChild(wrapper);
                     card.appendChild(videoInfo);
