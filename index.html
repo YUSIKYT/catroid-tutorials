@@ -92,6 +92,18 @@
             font-size: 0.9rem;
             color: var(--text-secondary);
             line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        /* Стиль для плашки с названием папки */
+        .video-folder-badge {
+            display: inline-block;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent-color);
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: monospace;
         }
 
         .loading {
@@ -134,7 +146,6 @@
                     const card = document.createElement('div');
                     card.className = 'video-card';
                     
-                    // Создаем структуру через DOM-элементы, чтобы браузер корректно инициализировал медиа-поток
                     const videoContainer = document.createElement('div');
                     videoContainer.className = 'video-container';
 
@@ -161,14 +172,20 @@
                     descDiv.className = 'video-desc';
                     descDiv.textContent = videoData.description || '';
 
+                    // Создаем плашку, которая показывает путь/папку файла
+                    const folderBadge = document.createElement('div');
+                    folderBadge.className = 'video-folder-badge';
+                    // Берем путь из JSON (например, "videos/video1.mp4" -> выведет папка: videos)
+                    folderBadge.textContent = "📁 Источник: " + videoData.url;
+
                     videoInfo.appendChild(titleDiv);
                     videoInfo.appendChild(descDiv);
+                    videoInfo.appendChild(folderBadge);
 
                     card.appendChild(videoContainer);
                     card.appendChild(videoInfo);
                     grid.appendChild(card);
 
-                    // Принудительно заставляем плеер запросить метаданные файла из папки
                     video.load();
                 });
 
