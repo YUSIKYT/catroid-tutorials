@@ -70,10 +70,10 @@
             background: #000;
         }
 
-        iframe {
+        video {
             width: 100%;
             height: 100%;
-            border: none;
+            object-fit: cover;
         }
 
         .video-info {
@@ -135,7 +135,10 @@
                     
                     card.innerHTML = `
                         <div class="video-container">
-                            <iframe src="${video.url}" title="${video.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            <video controls preload="metadata" playsinline>
+                                <source src="${video.url}" type="video/mp4">
+                                Ваш браузер не поддерживает видео.
+                            </video>
                         </div>
                         <div class="video-info">
                             <div class="video-title">${video.title}</div>
