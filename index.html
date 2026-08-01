@@ -73,7 +73,6 @@
             border-color: rgba(56, 189, 248, 0.3);
         }
 
-        /* Контейнер плеера */
         .custom-video-wrapper {
             position: relative;
             width: 100%;
@@ -91,7 +90,6 @@
             display: block;
         }
 
-        /* Современная панель управления */
         .video-controls {
             position: absolute;
             bottom: 0;
@@ -112,7 +110,6 @@
             transform: translateY(0);
         }
 
-        /* Кнопки управления */
         .ctrl-btn {
             background: none;
             border: none;
@@ -136,15 +133,9 @@
             transform: scale(0.92);
         }
 
-        .play-btn {
-            font-size: 1rem;
-        }
+        .play-btn { font-size: 1rem; }
+        .fullscreen-btn { font-size: 1.1rem; }
 
-        .fullscreen-btn {
-            font-size: 1.1rem;
-        }
-
-        /* Шкала прогресса */
         .progress-bar-container {
             flex-grow: 1;
             height: 6px;
@@ -168,7 +159,6 @@
             position: relative;
         }
 
-        /* Таймер */
         .video-time {
             font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.8);
@@ -178,7 +168,6 @@
             font-weight: 500;
         }
 
-        /* Информация под видео */
         .video-info {
             padding: 20px;
         }
@@ -226,156 +215,178 @@
 
         async function loadVideos() {
             const grid = document.getElementById('video-grid');
+            
+            // Запасной массив на случай, если videos.json не загрузится на GitHub Pages
+            const fallbackVideos = [
+                {
+                    "title": "КАК СДЕЛАТЬ СТИК С ОГРАНИЧЕНИЕМ В NewCatroid | Туториал для начинающих 🎮",
+                    "description": "Учимся делать простое и плавное управление касанием экрана.",
+                    "url": "videos/video1.mp4"
+                },
+                {
+                    "title": "ПОЧЕМУ ХЕЙТЯТ САШУ СПИЛБЕРГ?",
+                    "description": "Ностальгический разбор и рассуждения про старую школу Ютуба.",
+                    "url": "https://youtu.be/r-OHpVXsn0M"
+                }
+            ];
+
+            let videos = [];
+
             try {
                 const response = await fetch('videos.json');
-                if (!response.ok) throw new Error('Не удалось загрузить список видео');
+                if (!response.ok) throw new Error('Файл не найден');
+                videos = await response.json();
+            } catch (e) {
+                console.warn('Не удалось загрузить videos.json, используются встроенные данные:', e);
+                videos = fallbackVideos;
+            }
+
+            if (!videos || videos.length === 0) {
+                grid.innerHTML = '<div class="loading">Список видео пуст.</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+
+            videos.forEach(videoData => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
                 
-                const videos = await response.json();
-                
-                if (!videos || videos.length === 0) {
-                    grid.innerHTML = '<div class="loading">Скоро здесь появятся новые туториалы!</div>';
-                    return;
-                }
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-video-wrapper';
 
-                grid.innerHTML = '';
+                const videoInfo = document.createElement('div');
+                videoInfo.className = 'video-info';
 
-                videos.forEach(videoData => {
-                    const card = document.createElement('div');
-                    card.className = 'video-card';
-                    
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'custom-video-wrapper';
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'video-title';
+                titleDiv.textContent = videoData.title;
 
-                    const videoInfo = document.createElement('div');
-                    videoInfo.className = 'video-info';
+                const descDiv = document.createElement('div');
+                descDiv.className = 'video-desc';
+                descDiv.textContent = videoData.description || '';
 
-                    const titleDiv = document.createElement('div');
-                    titleDiv.className = 'video-title';
-                    titleDiv.textContent = videoData.title;
+                videoInfo.appendChild(titleDiv);
+                videoInfo.appendChild(descDiv);
 
-                    const descDiv = document.createElement('div');
-                    descDiv.className = 'video-desc';
-                    descDiv.textContent = videoData.description || '';
+                const isYouTube = videoData.url.includes('youtube.com') || videoData.url.includes('youtu.be');
 
-                    videoInfo.appendChild(titleDiv);
-                    videoInfo.appendChild(descDiv);
+                if (isYouTube) {
+                    let embedUrl = videoData.url;
+                    if (videoData.url.includes('watch?v=')) {
+                        embedUrl = videoData.url.replace('watch?v=', 'embed/');
+                    } else if (videoData.url.includes('youtu.be/')) {
+                        embedUrl = videoData.url.replace('youtu.be/', 'www.youtube.com/embed/');
+                    }
+                    // Убираем лишние параметры вроде si=, если есть
+                    if (embedUrl.includes('?si=')) {
+                        embedUrl = embedUrl.split('?si=')[0];
+                    }
 
-                    // Проверяем, YouTube ли это ссылка или локальный файл
-                    const isYouTube = videoData.url.includes('youtube.com') || videoData.url.includes('youtu.be');
+                    const iframe = document.createElement('iframe');
+                    iframe.src = embedUrl;
+                    iframe.title = videoData.title;
+                    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                    iframe.allowFullscreen = true;
 
-                    if (isYouTube) {
-                        // Конвертируем обычную ссылку YouTube в embed формат
-                        let embedUrl = videoData.url;
-                        if (videoData.url.includes('watch?v=')) {
-                            embedUrl = videoData.url.replace('watch?v=', 'embed/');
-                        } else if (videoData.url.includes('youtu.be/')) {
-                            embedUrl = videoData.url.replace('youtu.be/', 'www.youtube.com/embed/');
+                    wrapper.appendChild(iframe);
+                } else {
+                    const video = document.createElement('video');
+                    video.src = videoData.url;
+                    video.preload = "metadata";
+                    video.playsInline = true;
+
+                    const controls = document.createElement('div');
+                    controls.className = 'video-controls';
+
+                    const playBtn = document.createElement('button');
+                    playBtn.className = 'ctrl-btn play-btn';
+                    playBtn.innerHTML = '▶';
+
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className, 'progress-bar-container';
+                    // Исправление класса контейнера прогресса
+                    progressContainer.className = 'progress-bar-container';
+
+                    const progressFilled = document.createElement('div');
+                    progressFilled.className = 'progress-filled';
+                    progressContainer.appendChild(progressFilled);
+
+                    const timeDisplay = document.createElement('div');
+                    timeDisplay.className = 'video-time';
+                    timeDisplay.textContent = '0:00 / 0:00';
+
+                    const fullscreenBtn = document.createElement('button');
+                    fullscreenBtn.className = 'ctrl-btn fullscreen-btn';
+                    fullscreenBtn.innerHTML = '⛶';
+
+                    controls.appendChild(playBtn);
+                    controls.appendChild(progressContainer);
+                    controls.appendChild(timeDisplay);
+                    controls.appendChild(fullscreenBtn);
+
+                    wrapper.appendChild(video);
+                    wrapper.appendChild(controls);
+
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (video.paused) {
+                            video.play();
+                            playBtn.innerHTML = '⏸';
+                        } else {
+                            video.pause();
+                            playBtn.innerHTML = '▶';
                         }
+                    });
 
-                        const iframe = document.createElement('iframe');
-                        iframe.src = embedUrl;
-                        iframe.title = videoData.title;
-                        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-                        iframe.allowFullscreen = true;
+                    video.addEventListener('click', () => {
+                        playBtn.click();
+                    });
 
-                        wrapper.appendChild(iframe);
-                    } else {
-                        // Локальное видео с кастомным плеером
-                        const video = document.createElement('video');
-                        video.src = videoData.url;
-                        video.preload = "metadata";
-                        video.playsInline = true;
-
-                        const controls = document.createElement('div');
-                        controls.className = 'video-controls';
-
-                        const playBtn = document.createElement('button');
-                        playBtn.className = 'ctrl-btn play-btn';
-                        playBtn.innerHTML = '▶';
-
-                        const progressContainer = document.createElement('div');
-                        progressContainer.className = 'progress-bar-container';
-
-                        const progressFilled = document.createElement('div');
-                        progressFilled.className = 'progress-filled';
-                        progressContainer.appendChild(progressFilled);
-
-                        const timeDisplay = document.createElement('div');
-                        timeDisplay.className = 'video-time';
-                        timeDisplay.textContent = '0:00 / 0:00';
-
-                        const fullscreenBtn = document.createElement('button');
-                        fullscreenBtn.className = 'ctrl-btn fullscreen-btn';
-                        fullscreenBtn.innerHTML = '⛶';
-
-                        controls.appendChild(playBtn);
-                        controls.appendChild(progressContainer);
-                        controls.appendChild(timeDisplay);
-                        controls.appendChild(fullscreenBtn);
-
-                        wrapper.appendChild(video);
-                        wrapper.appendChild(controls);
-
-                        // События плеера
-                        playBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            if (video.paused) {
-                                video.play();
-                                playBtn.innerHTML = '⏸';
-                            } else {
-                                video.pause();
-                                playBtn.innerHTML = '▶';
-                            }
-                        });
-
-                        video.addEventListener('click', () => {
-                            playBtn.click();
-                        });
-
-                        video.addEventListener('timeupdate', () => {
+                    video.addEventListener('timeupdate', () => {
+                        if (video.duration) {
                             const percent = (video.currentTime / video.duration) * 100;
                             progressFilled.style.width = `${percent}%`;
-                            timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
-                        });
+                            timeTimeDisplay = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+                            timeDisplay.textContent = timeTimeDisplay;
+                        }
+                    });
 
-                        progressContainer.addEventListener('click', (e) => {
+                    progressContainer.addEventListener('click', (e) => {
+                        if (video.duration) {
                             const rect = progressContainer.getBoundingClientRect();
                             const pos = (e.clientX - rect.left) / rect.width;
                             video.currentTime = pos * video.duration;
-                        });
+                        }
+                    });
 
-                        video.addEventListener('ended', () => {
-                            playBtn.innerHTML = '▶';
-                        });
+                    video.addEventListener('ended', () => {
+                        playBtn.innerHTML = '▶';
+                    });
 
-                        // Исправленный полноэкранный режим с возможностью выхода
-                        fullscreenBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            if (!document.fullscreenElement) {
-                                if (wrapper.requestFullscreen) {
-                                    wrapper.requestFullscreen();
-                                } else if (wrapper.webkitRequestFullscreen) {
-                                    wrapper.webkitRequestFullscreen();
-                                }
-                            } else {
-                                if (document.exitFullscreen) {
-                                    document.exitFullscreen();
-                                } else if (document.webkitExitFullscreen) {
-                                    document.webkitExitFullscreen();
-                                }
+                    fullscreenBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (!document.fullscreenElement) {
+                            if (wrapper.requestFullscreen) {
+                                wrapper.requestFullscreen();
+                            } else if (wrapper.webkitRequestFullscreen) {
+                                wrapper.webkitRequestFullscreen();
                             }
-                        });
-                    }
+                        } else {
+                            if (document.exitFullscreen) {
+                                document.exitFullscreen();
+                            } else if (document.webkitExitFullscreen) {
+                                document.webkitExitFullscreen();
+                            }
+                        }
+                    });
+                }
 
-                    card.appendChild(wrapper);
-                    card.appendChild(videoInfo);
-                    grid.appendChild(card);
-                });
+                card.appendChild(wrapper);
+                card.appendChild(videoInfo);
+                grid.appendChild(card);
+            });
 
-            } catch (error) {
-                console.error(error);
-                grid.innerHTML = '<div class="loading">Ошибка загрузки видео. Проверьте файл videos.json</div>';
-            }
         }
 
         loadVideos();
