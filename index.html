@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Туториалы по Catroid</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-color: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 20px;
+        }
+
+        header h1 {
+            font-size: 2.3rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .video-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(56, 189, 248, 0.15);
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .video-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .loading {
+            text-align: center;
+            grid-column: 1 / -1;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Catroid Туториалы</h1>
+        <p>Уроки по созданию игр прямо на смартфоне</p>
+    </header>
+
+    <main class="container" id="video-grid">
+        <div class="loading">Загрузка туториалов...</div>
+    </main>
+
+    <script>
+        async function loadVideos() {
+            const grid = document.getElementById('video-grid');
+            try {
+                const response = await fetch('videos.json');
+                if (!response.ok) throw new Error('Не удалось загрузить список видео');
+                
+                const videos = await response.json();
+                
+                if (!videos || videos.length === 0) {
+                    grid.innerHTML = '<div class="loading">Скоро здесь появятся новые туториалы!</div>';
+                    return;
+                }
+
+                grid.innerHTML = '';
+
+                videos.forEach(video => {
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    
+                    card.innerHTML = `
+                        <div class="video-container">
+                            <video controls preload="metadata">
+                                <source src="${video.url}" type="video/mp4">
+                                Ваш браузер не поддерживает видео.
+                            </video>
+                        </div>
+                        <div class="video-info">
+                            <div class="video-title">${video.title}</div>
+                            <div class="video-desc">${video.description || ''}</div>
+                        </div>
+                    `;
+                    
+                    grid.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error(error);
+                grid.innerHTML = '<div class="loading">Ошибка загрузки видео. Проверьте файл videos.json</div>';
+            }
+        }
+
+        loadVideos();
+    </script>
+
+</body>
+</html>
