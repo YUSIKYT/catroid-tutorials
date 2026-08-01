@@ -64,17 +64,85 @@
             box-shadow: 0 10px 15px rgba(56, 189, 248, 0.15);
         }
 
-        .video-container {
+        /* Кастомный контейнер плеера */
+        .custom-video-wrapper {
+            position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
             background: #000;
+            overflow: hidden;
         }
 
-        video {
+        .custom-video-wrapper video {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        /* Панель управления */
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 15px 10px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .custom-video-wrapper:hover .video-controls {
+            opacity: 1;
+        }
+
+        /* Кнопка Play/Pause */
+        .play-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            color: var(--accent-color);
+        }
+
+        /* Шкала прогресса */
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-filled {
+            height: 100%;
+            background: var(--accent-color);
+            border-radius: 3px;
+            width: 0%;
+        }
+
+        /* Таймер */
+        .video-time {
+            font-size: 0.8rem;
+            color: #fff;
+            min-width: 75px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
         }
 
         .video-info {
@@ -95,7 +163,6 @@
             margin-bottom: 10px;
         }
 
-        /* Стиль для плашки с названием папки */
         .video-folder-badge {
             display: inline-block;
             background-color: rgba(56, 189, 248, 0.1);
@@ -127,6 +194,12 @@
     </main>
 
     <script>
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
         async function loadVideos() {
             const grid = document.getElementById('video-grid');
             try {
@@ -146,21 +219,72 @@
                     const card = document.createElement('div');
                     card.className = 'video-card';
                     
-                    const videoContainer = document.createElement('div');
-                    videoContainer.className = 'video-container';
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'custom-video-wrapper';
 
                     const video = document.createElement('video');
-                    video.controls = true;
-                    video.preload = "auto";
+                    video.src = videoData.url;
+                    video.preload = "metadata";
                     video.playsInline = true;
 
-                    const source = document.createElement('source');
-                    source.src = videoData.url;
-                    source.type = "video/mp4";
+                    // Создаем свою панель управления
+                    const controls = document.createElement('div');
+                    controls.className = 'video-controls';
 
-                    video.appendChild(source);
-                    videoContainer.appendChild(video);
+                    const playBtn = document.createElement('button');
+                    playBtn.className = 'play-btn';
+                    playBtn.innerHTML = '▶';
 
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className = 'progress-bar-container';
+
+                    const progressFilled = document.createElement('div');
+                    progressFilled.className = 'progress-filled';
+                    progressContainer.appendChild(progressFilled);
+
+                    const timeDisplay = document.createElement('div');
+                    timeDisplay.className = 'video-time';
+                    timeDisplay.textContent = '0:00 / 0:00';
+
+                    controls.appendChild(playBtn);
+                    controls.appendChild(progressContainer);
+                    controls.appendChild(timeDisplay);
+
+                    wrapper.appendChild(video);
+                    wrapper.appendChild(controls);
+
+                    // Логика плеера
+                    playBtn.addEventListener('click', () => {
+                        if (video.paused) {
+                            video.play();
+                            playBtn.innerHTML = '⏸';
+                        } else {
+                            video.pause();
+                            playBtn.innerHTML = '▶';
+                        }
+                    });
+
+                    video.addEventListener('click', () => {
+                        playBtn.click();
+                    });
+
+                    video.addEventListener('timeupdate', () => {
+                        const percent = (video.currentTime / video.duration) * 100;
+                        progressFilled.style.width = `${percent}%`;
+                        timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration || 0)}`;
+                    });
+
+                    progressContainer.addEventListener('click', (e) => {
+                        const rect = progressContainer.getBoundingClientRect();
+                        const pos = (e.clientX - rect.left) / rect.width;
+                        video.currentTime = pos * video.duration;
+                    });
+
+                    video.addEventListener('ended', () => {
+                        playBtn.innerHTML = '▶';
+                    });
+
+                    // Информация под видео
                     const videoInfo = document.createElement('div');
                     videoInfo.className = 'video-info';
 
@@ -172,21 +296,17 @@
                     descDiv.className = 'video-desc';
                     descDiv.textContent = videoData.description || '';
 
-                    // Создаем плашку, которая показывает путь/папку файла
                     const folderBadge = document.createElement('div');
                     folderBadge.className = 'video-folder-badge';
-                    // Берем путь из JSON (например, "videos/video1.mp4" -> выведет папка: videos)
                     folderBadge.textContent = "📁 Источник: " + videoData.url;
 
                     videoInfo.appendChild(titleDiv);
                     videoInfo.appendChild(descDiv);
                     videoInfo.appendChild(folderBadge);
 
-                    card.appendChild(videoContainer);
+                    card.appendChild(wrapper);
                     card.appendChild(videoInfo);
                     grid.appendChild(card);
-
-                    video.load();
                 });
 
             } catch (error) {
