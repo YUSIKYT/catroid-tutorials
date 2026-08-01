@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Туториалы по Catroid</title>
+    <title>Catroid Туториалы</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #090d16;
+            --card-bg: #131c2e;
+            --card-border: rgba(255, 255, 255, 0.07);
             --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
         }
@@ -17,54 +19,61 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding: 20px;
+            padding: 30px 20px;
+            min-height: 100vh;
         }
 
         header {
             text-align: center;
-            margin-bottom: 40px;
-            padding-top: 20px;
+            margin-bottom: 50px;
+            padding-top: 10px;
         }
 
         header h1 {
-            font-size: 2.3rem;
-            color: var(--accent-color);
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
         }
 
         header p {
             color: var(--text-secondary);
-            font-size: 1.05rem;
+            font-size: 1.1rem;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
         }
 
         .video-card {
             background-color: var(--card-bg);
-            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(04, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
         }
 
         .video-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px rgba(56, 189, 248, 0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 30px -10px rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.3);
         }
 
-        /* Кастомный контейнер плеера */
+        /* Контейнер плеера */
         .custom-video-wrapper {
             position: relative;
             width: 100%;
@@ -80,97 +89,110 @@
             display: block;
         }
 
-        /* Панель управления */
+        /* Современная панель управления */
         .video-controls {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-            padding: 15px 10px 10px;
+            background: linear-gradient(to top, rgba(5, 8, 15, 0.9), rgba(5, 8, 15, 0.4), transparent);
+            padding: 20px 15px 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transform: translateY(5px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
         }
 
         .custom-video-wrapper:hover .video-controls {
             opacity: 1;
+            transform: translateY(0);
         }
 
-        /* Кнопка Play/Pause */
-        .play-btn {
+        /* Кнопки управления */
+        .ctrl-btn {
             background: none;
             border: none;
             color: #fff;
-            font-size: 1.2rem;
             cursor: pointer;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s, transform 0.1s;
         }
 
-        .play-btn:hover {
-            transform: scale(1.1);
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
             color: var(--accent-color);
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.92);
+        }
+
+        .play-btn {
+            font-size: 1rem;
+        }
+
+        .fullscreen-btn {
+            font-size: 1.1rem;
         }
 
         /* Шкала прогресса */
         .progress-bar-container {
             flex-grow: 1;
             height: 6px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
             cursor: pointer;
             position: relative;
+            overflow: hidden;
+            transition: height 0.15s;
+        }
+
+        .progress-bar-container:hover {
+            height: 8px;
         }
 
         .progress-filled {
             height: 100%;
             background: var(--accent-color);
-            border-radius: 3px;
+            border-radius: 4px;
             width: 0%;
+            position: relative;
         }
 
         /* Таймер */
         .video-time {
-            font-size: 0.8rem;
-            color: #fff;
-            min-width: 75px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            min-width: 70px;
             text-align: right;
             font-variant-numeric: tabular-nums;
+            font-weight: 500;
         }
 
+        /* Информация под видео */
         .video-info {
-            padding: 15px;
+            padding: 20px;
         }
 
         .video-title {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 8px;
             color: var(--text-color);
+            line-height: 1.4;
         }
 
         .video-desc {
             font-size: 0.9rem;
             color: var(--text-secondary);
-            line-height: 1.4;
-            margin-bottom: 10px;
-        }
-
-        .video-folder-badge {
-            display: inline-block;
-            background-color: rgba(56, 189, 248, 0.1);
-            color: var(--accent-color);
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-family: monospace;
+            line-height: 1.5;
         }
 
         .loading {
@@ -178,7 +200,7 @@
             grid-column: 1 / -1;
             color: var(--text-secondary);
             font-size: 1.1rem;
-            padding: 40px;
+            padding: 50px;
         }
     </style>
 </head>
@@ -227,12 +249,12 @@
                     video.preload = "metadata";
                     video.playsInline = true;
 
-                    // Создаем свою панель управления
+                    // Панель управления
                     const controls = document.createElement('div');
                     controls.className = 'video-controls';
 
                     const playBtn = document.createElement('button');
-                    playBtn.className = 'play-btn';
+                    playBtn.className = 'ctrl-btn play-btn';
                     playBtn.innerHTML = '▶';
 
                     const progressContainer = document.createElement('div');
@@ -246,15 +268,21 @@
                     timeDisplay.className = 'video-time';
                     timeDisplay.textContent = '0:00 / 0:00';
 
+                    const fullscreenBtn = document.createElement('button');
+                    fullscreenBtn.className = 'ctrl-btn fullscreen-btn';
+                    fullscreenBtn.innerHTML = '⛶';
+
                     controls.appendChild(playBtn);
                     controls.appendChild(progressContainer);
                     controls.appendChild(timeDisplay);
+                    controls.appendChild(fullscreenBtn);
 
                     wrapper.appendChild(video);
                     wrapper.appendChild(controls);
 
                     // Логика плеера
-                    playBtn.addEventListener('click', () => {
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         if (video.paused) {
                             video.play();
                             playBtn.innerHTML = '⏸';
@@ -284,7 +312,19 @@
                         playBtn.innerHTML = '▶';
                     });
 
-                    // Информация под видео
+                    // Полноэкранный режим
+                    fullscreenBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (wrapper.requestFullscreen) {
+                            wrapper.requestFullscreen();
+                        } else if (wrapper.webkitRequestFullscreen) {
+                            wrapper.webkitRequestFullscreen();
+                        } else if (video.webkitEnterFullscreen) {
+                            video.webkitEnterFullscreen(); // Для iOS
+                        }
+                    });
+
+                    // Информация под видео (без папки)
                     const videoInfo = document.createElement('div');
                     videoInfo.className = 'video-info';
 
@@ -296,13 +336,8 @@
                     descDiv.className = 'video-desc';
                     descDiv.textContent = videoData.description || '';
 
-                    const folderBadge = document.createElement('div');
-                    folderBadge.className = 'video-folder-badge';
-                    folderBadge.textContent = "📁 Источник: " + videoData.url;
-
                     videoInfo.appendChild(titleDiv);
                     videoInfo.appendChild(descDiv);
-                    videoInfo.appendChild(folderBadge);
 
                     card.appendChild(wrapper);
                     card.appendChild(videoInfo);
